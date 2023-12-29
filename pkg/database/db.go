@@ -45,3 +45,47 @@ func AddTimer(tr *models.TimerRow) (int64, error) {
 	}
 	return id, nil
 }
+
+func GetTimers(filterValue string) ([]models.TimerRow, error) {
+	var sqlString string
+	switch filterValue {
+	case "all":
+		sqlString = "SELECT * FROM timers"
+	case "running":
+		sqlString = "SELECT * FROM timers WHERE status = 'running'"
+	case "paused":
+		sqlString = "SELECT * FROM timers WHERE status = 'paused'"
+	}
+	fmt.Println(sqlString)
+	var timersArray []models.TimerRow
+
+	rows, err := Db.Query(sqlString)
+	if err != nil {
+		return timersArray, err
+	}
+	defer rows.Close()
+	var (
+		id              int64
+		name            string
+		status          string
+		timestamp_start int64
+		timestamp_end   sql.NullInt64
+	)
+	for rows.Next() {
+		err := rows.Scan(&id, &name, &status, &timestamp_start, &timestamp_end)
+		if err != nil {
+			return timersArray, err
+		}
+		// fmt.Println(id, name, status, timestamp_start, timestamp_end)
+
+		newRowResult := models.TimerRow{
+			Name:            name,
+			Status:          status,
+			Timestamp_start: timestamp_start,
+			Timestamp_end:   timestamp_end.Int64,
+		}
+		timersArray = append(timersArray, newRowResult)
+
+	}
+	return timersArray, nil
+}
