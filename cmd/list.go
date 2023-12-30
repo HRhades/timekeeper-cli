@@ -1,17 +1,12 @@
 package cmd
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/HRhades/tk/pkg/database"
-	"github.com/HRhades/tk/pkg/models"
+	"github.com/HRhades/tk/pkg/utils"
 	"github.com/spf13/cobra"
 )
-
-func printTimers(timers []models.TimerRow) {
-
-}
 
 // newCmd represents the new command
 var listCmd = &cobra.Command{
@@ -25,9 +20,10 @@ var listCmd = &cobra.Command{
 			log.Fatalf("query failed: %v", err)
 		}
 
-		for _, row := range rowsArray {
-			fmt.Println(row)
-		}
+		utils.PrintTimers(rowsArray)
+		// for _, row := range rowsArray {
+		// 	fmt.Println(row)
+		// }
 
 	},
 }

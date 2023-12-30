@@ -2,8 +2,8 @@ package database
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
+	"time"
 
 	"github.com/HRhades/tk/pkg/models"
 	_ "modernc.org/sqlite"
@@ -32,7 +32,7 @@ func InitDB(dbPath string) error {
 }
 
 func AddTimer(tr *models.TimerRow) (int64, error) {
-	fmt.Println(tr)
+	// fmt.Println(tr)
 	result, err := Db.Exec(
 		`INSERT INTO timers (name, status, timestamp_start) VALUES (?,?,?);`, tr.Name, tr.Status, tr.Timestamp_start,
 	)
@@ -46,6 +46,30 @@ func AddTimer(tr *models.TimerRow) (int64, error) {
 	return id, nil
 }
 
+func GetTimer(timerName string) (models.TimerRow, error) {
+	row := Db.QueryRow(`SELECT * FROM timers WHERE name = ?;`, timerName)
+	var (
+		id              int64
+		name            string
+		status          string
+		timestamp_start int64
+		timestamp_end   sql.NullInt64
+	)
+	err := row.Scan(&id, &name, &status, &timestamp_start, &timestamp_end)
+	// fmt.Println(id, name, status, timestamp_start, timestamp_end)
+	if err != nil {
+		return models.TimerRow{}, err
+	}
+
+	newRowResult := models.TimerRow{
+		Name:            name,
+		Status:          status,
+		Timestamp_start: timestamp_start,
+		Timestamp_end:   timestamp_end.Int64,
+	}
+	return newRowResult, nil
+}
+
 func GetTimers(filterValue string) ([]models.TimerRow, error) {
 	var sqlString string
 	switch filterValue {
@@ -56,7 +80,6 @@ func GetTimers(filterValue string) ([]models.TimerRow, error) {
 	case "paused":
 		sqlString = "SELECT * FROM timers WHERE status = 'paused'"
 	}
-	fmt.Println(sqlString)
 	var timersArray []models.TimerRow
 
 	rows, err := Db.Query(sqlString)
@@ -88,4 +111,25 @@ func GetTimers(filterValue string) ([]models.TimerRow, error) {
 
 	}
 	return timersArray, nil
+}
+
+func DeleteTimer(timerName string) error {
+	_, err := Db.Exec(`DELETE FROM timers WHERE name = ?`, timerName)
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func Stoptimer(timerName string) error {
+
+	currentTime := time.Now().UnixMicro()
+	_, err := Db.Exec(`UPDATE timers SET status='stopped', timestamp_end=? WHERE name=?;`, currentTime, timerName)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

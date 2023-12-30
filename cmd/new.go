@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/HRhades/tk/pkg/database"
@@ -18,22 +18,27 @@ var newCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		database.InitDB("E:\\Coding\\temp_data\\tk.db")
 
-		for _, arg := range args {
-			fmt.Printf("arg value: %v\n", arg)
+		var timerName string
+		if len(args) > 0 {
+			timerName = args[0]
+		}
+		_, err := database.GetTimer(timerName)
+
+		if err == nil {
+			log.Fatalf("A timer with the name %s already exists, please choose another name", timerName)
 		}
 
 		newTimer := models.TimerRow{
-			Name:            "testTimer",
+			Name:            timerName,
 			Status:          "running",
 			Timestamp_start: time.Now().UnixMicro(),
 		}
 		id, err := database.AddTimer(&newTimer)
 		if err != nil {
 			log.Printf("Adding timer failed!: %v", err)
+			os.Exit(1)
 		}
 		log.Printf("Added timer '%v' with id %v", newTimer.Name, id)
-
-		fmt.Printf("new called at %v", time.Now().Format(time.RFC3339))
 	},
 }
 
