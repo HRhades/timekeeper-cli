@@ -75,6 +75,8 @@ func GetTimers(filterValue string) ([]models.TimerRow, error) {
 	switch filterValue {
 	case "all":
 		sqlString = "SELECT * FROM timers"
+	case "stopped":
+		sqlString = "SELECT * FROM timers WHERE status = 'stopped'"
 	case "running":
 		sqlString = "SELECT * FROM timers WHERE status = 'running'"
 	case "paused":
