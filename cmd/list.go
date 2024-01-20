@@ -14,7 +14,7 @@ var listCmd = &cobra.Command{
 	Short: "list all timers",
 	Long:  `Use list to list all active timers`,
 	Run: func(cmd *cobra.Command, args []string) {
-		database.InitDB("E:\\Coding\\temp_data\\tk.db")
+		database.InitDB(dbPath)
 
 		var filterString string
 		if allTimers {

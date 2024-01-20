@@ -3,6 +3,7 @@ module github.com/HRhades/tk
 go 1.21.1
 
 require (
+	github.com/mitchellh/go-homedir v1.1.0
 	github.com/spf13/cobra v1.7.0
 	modernc.org/sqlite v1.26.0
 )

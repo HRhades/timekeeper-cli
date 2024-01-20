@@ -16,7 +16,7 @@ var newCmd = &cobra.Command{
 	Short: "Add new timer",
 	Long:  `Use new to add a new timer to keep track off`,
 	Run: func(cmd *cobra.Command, args []string) {
-		database.InitDB("E:\\Coding\\temp_data\\tk.db")
+		database.InitDB(dbPath)
 
 		var timerName string
 		if len(args) > 0 {

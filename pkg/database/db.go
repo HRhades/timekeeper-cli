@@ -24,6 +24,7 @@ func InitDB(dbPath string) error {
             status TEXT NOT NULL,
 			timestamp_start INTEGER NOT NULL,
 			timestamp_end INTEGER
+			timer_time INTEGER
         )`)
 
 	Db = db
@@ -127,6 +128,24 @@ func DeleteTimer(timerName string) error {
 func Stoptimer(timerName string) error {
 
 	currentTime := time.Now().UnixMicro()
+	_, err := Db.Exec(`UPDATE timers SET status='stopped', timestamp_end=? WHERE name=?;`, currentTime, timerName)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func Pausetimer(timerName string) error {
+
+	timerRow, err := GetTimer(timerName)
+	if err != nil {
+		return err
+	}
+	currentTime := time.Now().UnixMicro()
+	timerDuration := currentTime.Sub(timerRow.Timestamp_start)
+
 	_, err := Db.Exec(`UPDATE timers SET status='stopped', timestamp_end=? WHERE name=?;`, currentTime, timerName)
 
 	if err != nil {
