@@ -175,13 +175,14 @@ func Stoptimer(timerName string) error {
 }
 
 func Pausetimer(timerName string) error {
-	timerRow, err := GetTimer(timerName)
+	timer, err := GetTimer(timerName)
 	if err != nil {
 		return err
 	}
 	currentTime := time.Now()
 	timerDuration := currentTime.Sub(time.UnixMicro(timerRow.Timestamp_start))
 
+	_, err = Db.Exec(`UPDATE timer_rows SET timestamp_end=?, timer_duration=? WHERE name=? AND timestamp_end IS NULL;`, currentTime, timerDuration.Microseconds(), timerName)
 	_, err = Db.Exec(`UPDATE timers SET status='paused', timestamp_end=?, timer_duration=? WHERE name=?;`, currentTime, timerDuration.Microseconds(), timerName)
 
 	if err != nil {
