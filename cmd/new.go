@@ -28,12 +28,12 @@ var newCmd = &cobra.Command{
 			log.Fatalf("A timer with the name %s already exists, please choose another name", timerName)
 		}
 
-		newTimer := models.TimerRow{
-			Name:            timerName,
-			Status:          "running",
-			Timestamp_start: time.Now().UnixMicro(),
+		newTimer := models.Timer{
+			Name:    timerName,
+			Status:  "running",
+			Created: time.Now().UnixMicro(),
 		}
-		id, err := database.AddTimer(&newTimer)
+		id, err := database.AddTimer(newTimer)
 		if err != nil {
 			log.Printf("Adding timer failed!: %v", err)
 			os.Exit(1)
