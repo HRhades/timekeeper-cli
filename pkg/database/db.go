@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"time"
 
@@ -21,7 +22,7 @@ func InitDB(dbPath string) error {
 	db.Exec(`CREATE TABLE IF NOT EXISTS timers (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
-            status TEXT NOT NULL
+            status TEXT NOT NULL,
             created INTEGER NOT NULL
         )`)
 
@@ -52,7 +53,7 @@ func AddTimer(tr models.Timer) (int64, error) {
 		return 0, err
 	}
 
-	result, err = Db.Exec(
+	_, err = Db.Exec(
 		`INSERT INTO timer_rows (timer_id, timername, timestamp_start) VALUES (?,?,?)`, id, tr.Name, tr.Created,
 	)
 
@@ -86,6 +87,7 @@ func GetTimer(timerName string) (models.Timer, error) {
 	}
 	defer rows.Close()
 	var (
+		rowid           int64
 		timerid         int64
 		timername       string
 		timestamp_start int64
@@ -93,7 +95,7 @@ func GetTimer(timerName string) (models.Timer, error) {
 		duration        sql.NullInt64
 	)
 	for rows.Next() {
-		err := rows.Scan(&timerid, &timername, &timestamp_start, &timestamp_end, duration)
+		err := rows.Scan(&rowid, &timerid, &timername, &timestamp_start, &timestamp_end, &duration)
 		if err != nil {
 			return models.Timer{}, err
 		}
@@ -110,6 +112,7 @@ func GetTimer(timerName string) (models.Timer, error) {
 	}
 
 	newTimerResult := models.Timer{
+		Id:        id,
 		Name:      name,
 		Status:    status,
 		TimerRows: timersArray,
@@ -155,7 +158,10 @@ func GetTimers(filterValue string) ([]models.Timer, error) {
 
 func DeleteTimer(timerName string) error {
 	_, err := Db.Exec(`DELETE FROM timers WHERE name = ?`, timerName)
-
+	if err != nil {
+		return err
+	}
+	_, err = Db.Exec(`DELETE FROM timer_rows WHERE name = ?`, timerName)
 	if err != nil {
 		return err
 	}
@@ -165,8 +171,40 @@ func DeleteTimer(timerName string) error {
 func Stoptimer(timerName string) error {
 
 	currentTime := time.Now().UnixMicro()
-	_, err := Db.Exec(`UPDATE timers SET status='stopped', timestamp_end=? WHERE name=?;`, currentTime, timerName)
+	_, err := Db.Exec(`UPDATE timers SET status='stopped' WHERE name=?;`, timerName)
+	if err != nil {
+		return err
+	}
+	_, err = Db.Exec(`UPDATE timer_rows SET timestamp_end=? WHERE timername=? AND timestamp_end IS NULL;`, currentTime, timerName)
+	if err != nil {
+		return err
+	}
 
+	return nil
+}
+
+func Starttimer(timerName string) error {
+
+	currentTime := time.Now().UnixMicro()
+	timer, err := GetTimer(timerName)
+
+	if err != nil {
+		return err
+	}
+
+	if timer.Status == "running" {
+		fmt.Printf("timer %q is already running", timerName)
+		return nil
+	}
+
+	_, err = Db.Exec(`UPDATE timers SET status='running' WHERE name=?;`, timerName)
+	if err != nil {
+		return err
+	}
+
+	_, err = Db.Exec(
+		`INSERT INTO timer_rows (timer_id, timername, timestamp_start) VALUES (?,?,?)`, timer.Id, timer.Name, currentTime,
+	)
 	if err != nil {
 		return err
 	}
@@ -180,11 +218,18 @@ func Pausetimer(timerName string) error {
 		return err
 	}
 	currentTime := time.Now()
+	timerRow := timer.LastRow()
+	if !(timerRow.Timestamp_end == 0) {
+		fmt.Printf("Timer %s is already paused", timerName)
+		return nil
+	}
+
 	timerDuration := currentTime.Sub(time.UnixMicro(timerRow.Timestamp_start))
-
-	_, err = Db.Exec(`UPDATE timer_rows SET timestamp_end=?, timer_duration=? WHERE name=? AND timestamp_end IS NULL;`, currentTime, timerDuration.Microseconds(), timerName)
-	_, err = Db.Exec(`UPDATE timers SET status='paused', timestamp_end=?, timer_duration=? WHERE name=?;`, currentTime, timerDuration.Microseconds(), timerName)
-
+	_, err = Db.Exec(`UPDATE timer_rows SET timestamp_end=?, timer_duration=? WHERE timername=? AND timestamp_end IS NULL;`, currentTime, timerDuration.Microseconds(), timerName)
+	if err != nil {
+		return err
+	}
+	_, err = Db.Exec(`UPDATE timers SET status='paused' WHERE name=?;`, timerName)
 	if err != nil {
 		return err
 	}

@@ -12,9 +12,9 @@ import (
 )
 
 // stopCmd represents the stop command
-var pauseCmd = &cobra.Command{
-	Use:   "pause",
-	Short: "pause a timer",
+var startCmd = &cobra.Command{
+	Use:   "start",
+	Short: "start your paused or stopped timer",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		database.InitDB(dbPath)
@@ -24,18 +24,26 @@ var pauseCmd = &cobra.Command{
 		} else {
 			log.Fatal("Please supply a name to lookup")
 		}
-
-		err := database.Pausetimer(timerName)
+		timer, err := database.GetTimer(timerName)
 		if err != nil {
-			log.Fatalf("Pausing timer has failed with error: %v", err)
+			log.Fatalf("Reading timer failed: %v", err)
+		}
+		if timer.Status == "running" {
+			fmt.Printf("timer %q is already running", timerName)
+			return
+		}
+
+		err = database.Starttimer(timerName)
+		if err != nil {
+			log.Fatalf("Starting timer %q has failed with error: %v", timerName, err)
 		} else {
-			fmt.Printf("Paused timer %q", timerName)
+			fmt.Printf("Started timer %q", timerName)
 		}
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(pauseCmd)
+	rootCmd.AddCommand(startCmd)
 
 	// Here you will define your flags and configuration settings.
 

@@ -3,6 +3,7 @@ package models
 import "time"
 
 type Timer struct {
+	Id        int64
 	Name      string
 	Status    string
 	Created   int64
@@ -16,7 +17,7 @@ type TimerRow struct {
 	TimerDuration   int64
 }
 
-func (t Timer) duration() int64 {
+func (t Timer) Duration() int64 {
 	var duration int64 = 0
 
 	for _, tr := range t.TimerRows {
@@ -29,4 +30,17 @@ func (t Timer) duration() int64 {
 	}
 
 	return duration
+}
+
+func (t Timer) LastRow() TimerRow {
+	return t.TimerRows[len(t.TimerRows)-1]
+
+	// var returnRow TimerRow
+	// for _, tr := range t.TimerRows {
+	// 	if tr.Timestamp_end == 0 {
+	// 		return tr
+	// 	}
+	// 	returnRow = tr
+	// }
+	// return returnRow
 }
