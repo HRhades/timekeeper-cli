@@ -21,6 +21,8 @@ var listCmd = &cobra.Command{
 			filterString = "all"
 		} else if stoppedTimers {
 			filterString = "stopped"
+		} else if pausedTimers {
+			filterString = "paused"
 		} else {
 			filterString = "running"
 		}
@@ -35,13 +37,13 @@ var listCmd = &cobra.Command{
 	},
 }
 
-// var pausedTimers bool
+var pausedTimers bool
 var allTimers bool
 var stoppedTimers bool
 
 func init() {
 	rootCmd.AddCommand(listCmd)
 	listCmd.Flags().BoolVarP(&allTimers, "allTimers", "a", false, "alltimers:True,False")
-	// listCmd.Flags().BoolVarP(&pausedTimers, "pausedTimers", "p", false, "pausedTimers:True,False")
+	listCmd.Flags().BoolVarP(&pausedTimers, "pausedTimers", "p", false, "pausedTimers:True,False")
 	listCmd.Flags().BoolVarP(&stoppedTimers, "stoppedTimers", "s", false, "stoppedTimers:True,False")
 }
